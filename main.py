@@ -3,6 +3,8 @@ import csv
 import os
 import threading
 import sys
+import configparser
+
 
 def handle_client(conn, addr):
     print('Connected by', addr)
@@ -14,14 +16,25 @@ def handle_client(conn, addr):
         conn.sendall(b"NG: Serial number is smaller than existing serial numbers in CSV.")
     conn.close()
 
+def read_config(filename):
+    # configparserのインスタンスを作成
+    config = configparser.ConfigParser()
+    # INIファイルを読み込む
+    config.read(filename)
+    # セクション[server]からIPアドレスとポート番号を取得
+    ip_address = config.get('server', 'ip_address')
+    port = config.getint('server', 'port')
+    return ip_address, port
+
 def receive_data():
+    # INIファイルから設定を読み込む
+    ip_address, port = read_config('config.ini')
+
     # ソケットを作成して待機
-    HOST = '127.0.0.1'
-    PORT = 12345
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind((HOST, PORT))
+        s.bind((ip_address, port))
         s.listen()
-        print("Opne>--",HOST,":",PORT)
+        print("Open>--", ip_address, ":", port)
         while True:
             conn, addr = s.accept()
             threading.Thread(target=handle_client, args=(conn, addr)).start()
